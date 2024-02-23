@@ -11,8 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/peliculas")
@@ -37,17 +39,25 @@ public class PeliculaController {
         return service.savePelicula(bean);
     }
 
-    @PostMapping("/buscarPeliculas")
-    public List<Pelicula> buscarPeliculasPorNombre(@RequestBody String nombre){
-        return service.findByNombre(nombre);
+    @GetMapping("/buscarPeliculas")
+    public Set<Pelicula> buscarPeliculasPorNombre(@RequestParam("nombre") String nombre){
+        return service.searchPeliculasNombre(nombre);
+    }
+    @GetMapping("/searchDateRange")
+    public List<Pelicula> searchMoviesBetweenDates(@RequestParam("dateOne") String startDate,
+                                                   @RequestParam("dateTwo") String endDate) throws ParseException {
+        SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+        Date fechaParseadaUno = formatoFecha.parse(startDate);
+        Date fechaParseadaDos = formatoFecha.parse(endDate);
+        return service.findMoviesBetweenPublicationDates(fechaParseadaUno, fechaParseadaDos);
+    }
+/*
+    @GetMapping("/latest")
+    public List<Movie> getLatestMovies() {
+        return service.getMoviesOrderedByPublicationDateDesc();
     }
 
-
-    @PostMapping("/peliculasPorDirector")
-    public List<Pelicula> findByNombreDirector(@RequestBody String nombre_director){
-        return service.findByNombreDirector(nombre_director);
-    }
-
+ */
     @PostMapping("/registrar-imagen")
     public ResponseEntity<String> cargarImagen(@RequestPart("anio") String anio,
                                                @RequestPart("descripcion") String descripcion,
