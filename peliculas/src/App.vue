@@ -1,5 +1,6 @@
 <script scope>
 import axios from 'axios';
+import Form from './components/Form.vue';
 export default {
   data() {
     return {
@@ -16,17 +17,63 @@ export default {
       },
       categories: [{ text: 'Selecciona Una', value: null }, 'Drama', 'Terror', 'Romance', 'Suspenso'],
       urlImagen: "",
-      buscar:"",
+      buscar: "",
       buscarFecha: {
-        "primera":null,        
-        "segunda":null
-      }
+        "primera": null,
+        "segunda": null
+      },
+      showElement: true,
+      lastScrollPosition: 0,
+      items: [
+        {
+          id: 0,
+          title: "Item A",
+          list: 1,
+        },
+        {
+          id: 1,
+          title: "Item B",
+          list: 1,
+        },
+        {
+          id: 2,
+          title: "Item C",
+          list: 2,
+        },
+        {
+          id: 3,
+          title: "Item D",
+          list: 2,
+        }
+      ],
     }
   },
   mounted() {
-    this.created()
+    this.created();
+    window.addEventListener("scroll", this.onScroll);
+  },
+  beforeDestroy() {
+    window.removeEventListener("scroll", this.onScroll);
+  },
+  computed: {
+    listOne() {
+      return this.items.filter((item) => item.list === 1);
+    },
+    listTwo() {
+      return this.items.filter((item) => item.list === 2);
+    },
   },
   methods: {
+    startDrag(evt, item) {
+      evt.dataTransfer.dropEffect = "move";
+      evt.dataTransfer.effectAllowed = "move";
+      evt.dataTransfer.setData("itemID", item.id);
+    },
+    onDrop(evt, list) {
+      const itemID = evt.dataTransfer.getData("itemID");
+      const item = this.items.find((item) => item.id == itemID);
+      item.list = list;
+    },
     created() {
       this.buscar = null;
       axios
@@ -67,7 +114,7 @@ export default {
       axios
         .get(`http://localhost:8080/api/peliculas/buscarPeliculas?nombre=${this.buscar}`)
         .then((response) => {
-          this.peliculas = response.data;   ``       
+          this.peliculas = response.data; ``
         })
         .catch((error) => {
           console.log("There was an error: " + error);
@@ -77,7 +124,7 @@ export default {
       axios
         .get(`http://localhost:8080/api/peliculas/searchDateRange?dateOne=${this.buscarFecha.primera}&dateTwo=${this.buscarFecha.segunda}`)
         .then((response) => {
-          this.peliculas = response.data;  
+          this.peliculas = response.data;
         })
         .catch((error) => {
           console.log("There was an error: " + error);
@@ -95,7 +142,15 @@ export default {
     },
     img(e) {
       this.pelicula.imagen = e.target.files[0];
-    }
+    },
+    onScroll() {
+      const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;      
+      if (Math.abs(currentScrollPosition - this.lastScrollPosition) < 70) {
+        return;
+      }      
+      this.showElement = currentScrollPosition < this.lastScrollPosition;      
+      this.lastScrollPosition = currentScrollPosition;
+    },
   }
 }
 </script>
@@ -114,14 +169,27 @@ export default {
       </nav>
     </header>
     <div>
+      <div class="drop-zone" @drop="onDrop($event, 1)" @dragover.prevent @dragenter.prevent>
+        <div v-for="item in listOne" :key="item.title" class="drag-el" draggable @dragstart="startDrag($event, item)">
+          {{ item.title }}
+        </div>
+        <div class="drop-zone" @drop="onDrop($event, 2)" @dragover.prevent @dragenter.prevent>
+          <div v-for="item in listTwo" :key="item.title" class="drag-el" draggable @dragstart="startDrag($event, item)">
+            <Form></Form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
       <div>
-        <div class="col-md-4 mx-auto" style="margin-top: 1rem;">
+        <div class="col-md-4 mx-auto" style="margin-top: 1rem;" v-show="showElement">
           <div class="row">
             <div class="col-md-9 mx-auto" style="margin-left: 3rem;">
               <b-form-input name="nombre" v-model="buscar" required></b-form-input>
             </div>
             <div class="col-md-2 mx-auto">
-              <b-button size="sm" class="btn btn-secondary" @click="search" style="margin-right: 0.5rem;">Buscar</b-button>
+              <b-button size="sm" class="btn btn-secondary" @click="search"
+                style="margin-right: 0.5rem;">Buscar</b-button>
             </div>
           </div>
           <div class="row">
@@ -140,17 +208,18 @@ export default {
               <div class="col-md-6 mx-auto" style="padding-top: 0.5rem;">
                 <div class="row">
                   <div class="col">
-                    <b-button size="sm" class="btn btn-secondary" type="submit" @click="searchDate">Buscar por fecha</b-button>
+                    <b-button size="sm" class="btn btn-secondary" type="submit" @click="searchDate">Buscar por
+                      fecha</b-button>
                   </div>
                   <div class="col">
                     <b-button size="sm" class="btn btn-secondary" type="submit" @click="created">Quitar Filtros</b-button>
                   </div>
-                </div>                
-              </div>              
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <b-modal id="modal-1" title="Agregar Pelicula">
+        <b-modal id="modal-1" title="Agregar Pelicula" hide-footer="true">
           <b-form @submit="onSubmit" @reset="onReset">
 
             <b-form-group id="input-group-name" label="Nombre:" label-for="input-name">
@@ -193,20 +262,45 @@ export default {
 
     </div>
     <div class="container row mx-auto mt-4">
-      <div class="col-md-4" v-for="pelicula in peliculas" :key="pelicula.id">
-        <b-card :title="pelicula.nombre" :img-src="pelicula.imagen" img-alt="Image" img-top tag="article"
-          style="max-width: 20rem; max-height: 30rem;" class="mb-2 mt-2 text-center">
-          <b-card-text>
-            <h6>Descripción: {{ pelicula.descripcion }}</h6>
-            Fecha: {{ pelicula.fechaPublicacion }}            
-          </b-card-text>
-        </b-card>
-      </div>
-    </div>
-    <div>
-      {{ rs }}
+      <transition-group name="zoom" tag="div" class="d-flex flex-row flex-wrap">
+        <div class="col-md-4" v-for="pelicula in peliculas" :key="pelicula.id">
+          <b-card :title="pelicula.nombre" :img-src="pelicula.imagen" img-alt="Image" img-top tag="article"
+            style="max-width: 20rem; max-height: 30rem;" class="mb-2 mt-2 text-center">
+            <b-card-text>
+              <h6>Descripción: {{ pelicula.descripcion }}</h6>
+              Fecha: {{ pelicula.fechaPublicacion }}
+            </b-card-text>
+          </b-card>
+        </div>
+      </transition-group>
     </div>
   </div>
 </template>
 
-<style scoped></style>
+<style >
+.drop-zone {
+  background-color: #eee;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.drag-el {
+  background-color: #fff;
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+.zoom-enter-active,
+.zoom-leave-active {
+  transition: transform 0.5s ease-in-out;
+}
+
+.zoom-enter,
+.zoom-leave-to {
+  transform: scale(0);
+}
+
+.hidden {
+  display: none;
+}
+</style>
