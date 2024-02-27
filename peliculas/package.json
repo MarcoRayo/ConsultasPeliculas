@@ -14,7 +14,8 @@
     "cors": "^2.8.5",
     "vue": "^2.7.16",
     "vue-animate": "^0.0.4",
-    "vue-loading-overlay": "3.0"
+    "vue-loading-overlay": "3.0",
+    "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
     "@vitejs/plugin-legacy": "^2.0.0",

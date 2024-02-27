@@ -12,6 +12,7 @@ node_modules
 dist
 dist-ssr
 *.local
+node_modules/
 
 /cypress/videos/
 /cypress/screenshots/
@@ -25,3 +26,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+/.vscode/
